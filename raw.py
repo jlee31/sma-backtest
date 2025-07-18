@@ -40,7 +40,7 @@ price['Bench_Bal'] = STARTING_BAL * price.Return.cumprod()
 print(price.tail())
 
 plt.plot(price.Bench_Bal)
-# plt.show()
+plt.show()
 
 # Calculate metrics
 bench_return = price.Bench_Bal[-1] / price.Bench_Bal[0] * 100
@@ -63,3 +63,20 @@ print(price.tail())
 bench_dd = round((price.Bench_DD / price.Bench_Peak).min(), 2)
 
 print(bench_dd)
+
+
+# Moving Average
+
+price['SMA'] = price.Close.rolling(window=PERIOD).mean()
+
+# Plotting Chart with Moving Average
+plt.plot(price.Close)
+plt.plot(price.SMA)
+plt.show()
+
+# creating entry signals
+# long means whenever you are in the market - above the moving average
+price['Long'] = True if price.Close > price.SMA else False
+
+print(price.tail(20))
+
