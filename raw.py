@@ -20,7 +20,7 @@ YEARS = (END_DATE - START_DATE).days / 365.25
 # Adding data to pandas dataframe 
 
 # price = pdr.get_data_yahoo('^GSPC', START_DATE, END_DATE)
-price = yf.download('^GSPC', start=START_DATE, end=END_DATE)
+price = yf.download('^GSPC', start=START_DATE, end=END_DATE, multi_level_index=False)
 
 # print(price.head())
 
@@ -67,7 +67,7 @@ print(bench_dd)
 
 # Moving Average
 
-price['SMA'] = price.Close.rolling(window=PERIOD).mean()
+price['SMA'] = price.Close.rolling(window = PERIOD).mean()
 
 # Plotting Chart with Moving Average
 plt.plot(price.Close)
@@ -76,7 +76,46 @@ plt.show()
 
 # creating entry signals
 # long means whenever you are in the market - above the moving average
-price['Long'] = True if price.Close > price.SMA else False
 
-print(price.tail(20))
+print(price.columns)
+price['Long'] = price.Close > price.SMA
 
+print(price.tail())
+
+# Calculate Daily System Return
+price['Sys_Ret'] = np.where(price.Long.shift(1) == True, price.Return, 1.0)
+print(price.tail())
+
+# Calculate System Balance
+price['Sys_Bal'] = STARTING_BAL * price.Sys_Ret.cumprod()
+
+
+plt.plot(price.Bench_Bal)
+plt.plot(price.Sys_Bal)
+plt.show()
+
+# calculate  more metrics
+sys_return = price.Sys_Bal[-1] / price.Sys_Bal[0] * 100
+sys_cagr = round((((price.Sys_Bal[-1] / price.Sys_Bal[0]) ** rate) - 1) * 100, 2)
+
+print(sys_return)
+print(sys_cagr)
+
+# drawdown
+
+price['Sys_Peak'] = price.Sys_Bal.cummax()
+price['Sys_DD'] = price.Sys_Bal - price.Sys_Peak
+
+sys_dd = round((((price.Sys_DD / price.Sys_Peak).min()) * 100), 2)
+
+print(sys_dd)
+
+# Final Metrics and Data Analysis
+
+print(f'Benchmark Total return: {bench_return}%')
+print(f'Benchmark CAGR: {bench_cagr}')
+print(f'Benchmark DD: {bench_dd}%')
+print('')
+print(f'System Total return: {sys_return}%')
+print(f'System CAGR: {sys_cagr}')
+print(f'System DD: {sys_dd}%')
